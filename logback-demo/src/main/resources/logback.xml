@@ -1,0 +1,55 @@
+<configuration>
+
+	<!-- Console Appender（開發時用） -->
+	<appender name="CONSOLE"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<!-- %d{yyyy-MM-dd HH:mm:ss.SSS}：時間戳記（含毫秒） -->
+		<!-- %-5level：日誌等級（左對齊、固定寬度） -->
+		<!-- [Thread=%thread]：執行緒名稱（如 main、pool-2-thread-1） -->
+		<!-- Class=%C{40}：Log 呼叫者類別（最多保留右側 40 字元） -->
+		<!-- :%L：程式碼行號 -->
+		<!-- - %msg：Log 訊息內容 -->
+		<!-- %n：換行符號 -->
+		<!-- ⚠ 使用 %C 和 %L 需在 <configuration includeLocation="true"> 才會顯示，否則為問號 -->
+		<!-- ⚠ %C 和 %L 會降低效能，建議只在開發環境啟用 -->
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [Thread=%thread] Class=%C{40}:%L - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- Sifting Appender：依 taskName 動態分流 -->
+	<appender name="SIFT"
+		class="ch.qos.logback.classic.sift.SiftingAppender">
+		<discriminator>
+			<key>taskName</key>
+			<defaultValue>default</defaultValue>
+		</discriminator>
+
+		<sift>
+			<appender name="FILE-${taskName}"
+				class="ch.qos.logback.core.FileAppender">
+				<file>logs/${taskName}.log</file>
+				<append>true</append>
+				<rollingPolicy
+					class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+					<maxIndex>50</maxIndex>
+					<FileNamePattern>logs/${taskName}.log.%i</FileNamePattern>
+				</rollingPolicy>
+				<triggeringPolicy
+					class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+					<MaxFileSize>10MB</MaxFileSize>
+				</triggeringPolicy>
+				<encoder>
+					<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [Thread=%thread] Class=%C{40}:%L - %msg%n</pattern>
+				</encoder>
+			</appender>
+		</sift>
+	</appender>
+
+	<!-- Root Logger -->
+	<root level="info">
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="SIFT" />
+	</root>
+
+</configuration>

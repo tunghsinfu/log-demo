@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Appenders>
+		<!-- Console Appender（開發時用） -->
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d [%t] %p %c{1.} %m%n" />
+			<!-- %d：輸出時間，格式預設為 ISO8601（可加上 {yyyy-MM-dd HH:mm:ss.SSS} 自訂格式） -->
+			<!-- %-5level：輸出日誌等級，靠左對齊佔 5 字元 -->
+			<!-- [Thread=%t]：輸出執行緒名稱（簡寫） -->
+			<!-- %c{1.}：輸出 Logger 名稱的最後一段（通常為類別名） -->
+			<!-- :%L：輸出呼叫日誌的程式碼行號 -->
+			<!-- - %msg：輸出日誌訊息 -->
+			<!-- %n：換行符 -->
+			<PatternLayout
+				pattern="%d %-5level [Thread=%t] %c{1.}:%L - %msg%n" />
+		</Console>
+
+		<!-- Route Appender：依 myRouteKey 動態分流 -->
+		<Routing name="Routing">
+			<Routes pattern="$${ctx:myRouteKey:-default}">
+				<Route>
+					<File name="File-${ctx:myRouteKey}"
+						fileName="logs/${ctx:myRouteKey}.log" append="true">
+						<PatternLayout pattern="%d %p %c{1.} [%t] %m%n" />
+					</File>
+				</Route>
+				<!-- 預設 route：當 myRouteKey 沒有設定時會寫入這裡 -->
+				<Route key="default">
+					<File name="File-default" fileName="logs/default.log"
+						append="true">
+						<PatternLayout
+							pattern="%d %-5level [Thread=%t] %c{1.}:%L - %msg%n" />
+					</File>
+				</Route>
+			</Routes>
+		</Routing>
+	</Appenders>
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="Routing" />
+		</Root>
+	</Loggers>
+</Configuration>
