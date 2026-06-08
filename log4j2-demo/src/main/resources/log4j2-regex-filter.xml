@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Log4j2 RegexFilter 配置示例
+    
+    RegexFilter 功能說明：
+    1. 可以根據正則表達式過濾日誌訊息
+    2. 支援 onMatch 和 onMismatch 兩種動作：ACCEPT（接受）、DENY（拒絕）、NEUTRAL（中立）
+    3. 可以應用在 Appender、Logger 或 Root Logger 上
+    4. 可以過濾訊息內容、Logger 名稱、MDC/ThreadContext 等
+    
+    useRawMsg 參數：
+    - true: 使用原始訊息（不包含格式化後的內容）
+    - false: 使用格式化後的訊息
+-->
+<Configuration status="WARN">
+    <Appenders>
+        <!-- Console Appender - 顯示所有日誌 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %c{1.}:%L - %msg%n" />
+        </Console>
+
+        <!-- File Appender 1: 過濾掉包含敏感詞彙的日誌 -->
+        <File name="FilteredFile" fileName="logs/regex-filtered.log" append="true">
+            <!-- 
+                RegexFilter 範例 1: 過濾敏感詞彙
+                - regex: 正則表達式，匹配包含 password、credit card、ssn 等敏感詞彙
+                - useRawMsg: false 表示使用格式化後的訊息
+                - onMatch: DENY 表示匹配時拒絕（不記錄）
+                - onMismatch: ACCEPT 表示不匹配時接受（記錄）
+            -->
+            <RegexFilter 
+                regex=".*(password|credit\s*card|ssn|social\s*security).*" 
+                useRawMsg="false"
+                onMatch="DENY" 
+                onMismatch="ACCEPT"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %c{1.} - %msg%n" />
+        </File>
+
+        <!-- File Appender 2: 只記錄包含錯誤代碼的日誌 -->
+        <File name="ErrorCodeFile" fileName="logs/regex-error-code.log" append="true">
+            <!-- 
+                RegexFilter 範例 2: 只記錄包含錯誤代碼格式的日誌
+                - regex: 匹配 ERROR-XXX 或 ERR-XXX 格式
+                - onMatch: ACCEPT 表示匹配時接受（記錄）
+                - onMismatch: DENY 表示不匹配時拒絕（不記錄）
+            -->
+            <RegexFilter 
+                regex=".*(?:ERROR|ERR)-\d{3,}.*" 
+                useRawMsg="false"
+                onMatch="ACCEPT" 
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %msg%n" />
+        </File>
+
+        <!-- File Appender 3: 過濾掉包含 IP 地址的日誌 -->
+        <File name="NoIpFile" fileName="logs/regex-no-ip.log" append="true">
+            <!-- 
+                RegexFilter 範例 3: 過濾包含 IP 地址的日誌
+                - regex: 匹配 IPv4 地址格式
+                - onMatch: DENY 表示匹配時拒絕
+                - onMismatch: NEUTRAL 表示不匹配時保持中立（交給下一個 Filter 處理）
+            -->
+            <RegexFilter 
+                regex=".*\b(?:\d{1,3}\.){3}\d{1,3}\b.*" 
+                useRawMsg="false"
+                onMatch="DENY" 
+                onMismatch="NEUTRAL"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %c{1.} - %msg%n" />
+        </File>
+
+        <!-- File Appender 4: 只記錄包含 Email 的日誌 -->
+        <File name="EmailFile" fileName="logs/regex-email-only.log" append="true">
+            <!-- 
+                RegexFilter 範例 4: 只記錄包含 Email 地址的日誌
+                - regex: 匹配 Email 格式
+            -->
+            <RegexFilter 
+                regex=".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.*" 
+                useRawMsg="false"
+                onMatch="ACCEPT" 
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n" />
+        </File>
+
+        <!-- File Appender 5: 記錄 SQL 相關的日誌 -->
+        <File name="SqlFile" fileName="logs/regex-sql.log" append="true">
+            <!-- 
+                RegexFilter 範例 5: 只記錄包含 SQL 關鍵字的日誌
+                - regex: 匹配 SELECT、INSERT、UPDATE、DELETE 等 SQL 關鍵字（不區分大小寫）
+            -->
+            <RegexFilter 
+                regex="(?i).*\b(select|insert|update|delete|create|alter|drop)\b.*" 
+                useRawMsg="false"
+                onMatch="ACCEPT" 
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n" />
+        </File>
+
+        <!-- File Appender 6: 組合多個 Filter -->
+        <File name="CombinedFilterFile" fileName="logs/regex-combined.log" append="true">
+            <!-- 
+                RegexFilter 範例 6: 組合多個 Filter
+                - 第一個 Filter: 拒絕包含敏感詞彙的日誌
+                - 第二個 Filter: 拒絕包含 IP 地址的日誌
+                - 第三個 Filter: 只接受 ERROR 或 WARN 等級
+            -->
+            <Filters>
+                <!-- Filter 1: 拒絕敏感詞彙 -->
+                <RegexFilter 
+                    regex=".*(password|credit\s*card).*" 
+                    useRawMsg="false"
+                    onMatch="DENY" 
+                    onMismatch="NEUTRAL"/>
+                
+                <!-- Filter 2: 拒絕 IP 地址 -->
+                <RegexFilter 
+                    regex=".*\b(?:\d{1,3}\.){3}\d{1,3}\b.*" 
+                    useRawMsg="false"
+                    onMatch="DENY" 
+                    onMismatch="NEUTRAL"/>
+                
+                <!-- Filter 3: 只接受包含 ERROR 或 WARN 關鍵字的日誌 -->
+                <RegexFilter 
+                    regex="(?i).*(error|warn|exception|failed).*" 
+                    useRawMsg="false"
+                    onMatch="ACCEPT" 
+                    onMismatch="DENY"/>
+            </Filters>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %c - %msg%n" />
+        </File>
+
+        <!-- File Appender 7: 使用原始訊息（useRawMsg=true） -->
+        <File name="RawMsgFile" fileName="logs/regex-raw-msg.log" append="true">
+            <!-- 
+                RegexFilter 範例 7: 使用原始訊息進行過濾
+                - useRawMsg: true 表示使用原始訊息（不包含日期、等級等格式化內容）
+                - 適合需要精確匹配訊息內容的場景
+            -->
+            <RegexFilter 
+                regex="^Processing order.*" 
+                useRawMsg="true"
+                onMatch="ACCEPT" 
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n" />
+        </File>
+
+        <!-- File Appender 8: 過濾包含數字 ID 的日誌 -->
+        <File name="NumberIdFile" fileName="logs/regex-number-id.log" append="true">
+            <!-- 
+                RegexFilter 範例 8: 記錄包含數字 ID 的日誌
+                - regex: 匹配包含 #數字 或 ID: 數字 的格式
+            -->
+            <RegexFilter 
+                regex=".*(?:#\d+|ID:\s*\w+-?\d+).*" 
+                useRawMsg="false"
+                onMatch="ACCEPT" 
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n" />
+        </File>
+    </Appenders>
+
+    <Loggers>
+        <!-- 
+            在 Logger 層級也可以使用 RegexFilter
+            例如：只讓特定 package 的特定訊息通過
+        -->
+        <Logger name="org.log4j2.demo" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FilteredFile"/>
+            <AppenderRef ref="ErrorCodeFile"/>
+            <AppenderRef ref="NoIpFile"/>
+            <AppenderRef ref="EmailFile"/>
+            <AppenderRef ref="SqlFile"/>
+            <AppenderRef ref="CombinedFilterFile"/>
+            <AppenderRef ref="RawMsgFile"/>
+            <AppenderRef ref="NumberIdFile"/>
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

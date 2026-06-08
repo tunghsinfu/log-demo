@@ -1,0 +1,12 @@
+# IDE 設定檔
+.classpath
+.project
+.settings/
+.factorypath
+
+# Maven 編譯輸出
+target/
+**/target/
+
+# 系統檔案
+.DS_Store
